@@ -20,7 +20,10 @@ if TYPE_CHECKING:
 
 
 class TransactionType(str, Enum):
+    FUND_WALLET = "fund_wallet"
     BUY_GOODS = "buy_goods"
+    CARD_PAYMENT = "card_payment"
+    BANK_TRANSFER = "bank_transfer"
     PAY_BILL = "pay_bill"
     SEND_MONEY = "send_money"
     BUY_AIRTIME = "buy_airtime"
@@ -52,6 +55,10 @@ class TransactionOrigin(str, Enum):
 
 
 class PaymentChannel(str, Enum):
+    WALLET = "wallet"
+    CARD = "card"
+    BANK_TRANSFER = "bank_transfer"
+    VIRTUAL_ACCOUNT = "virtual_account"
     USSD = "ussd"
     BANK_APP = "bank_app"
     QR_CODE = "qr_code"
@@ -65,7 +72,12 @@ class PaymentChannel(str, Enum):
 # Allowed status state machine
 VALID_TRANSITIONS: dict[TransactionStatus, set[TransactionStatus]] = {
     TransactionStatus.INITIATED: {TransactionStatus.PENDING, TransactionStatus.CANCELLED},
-    TransactionStatus.PENDING: {TransactionStatus.PROCESSING, TransactionStatus.FAILED, TransactionStatus.CANCELLED},
+    TransactionStatus.PENDING: {
+        TransactionStatus.PROCESSING,
+        TransactionStatus.SUCCESS,
+        TransactionStatus.FAILED,
+        TransactionStatus.CANCELLED,
+    },
     TransactionStatus.PROCESSING: {TransactionStatus.SUCCESS, TransactionStatus.FAILED},
     TransactionStatus.SUCCESS: {TransactionStatus.REVERSED, TransactionStatus.REFUNDED},
     TransactionStatus.FAILED: set(),

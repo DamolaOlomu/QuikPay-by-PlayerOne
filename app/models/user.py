@@ -6,6 +6,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
+import secrets
+
 from sqlalchemy import String, Enum as SAEnum, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +17,10 @@ from app.models.base import TimestampMixin, SoftDeleteMixin, ULIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.kyc import KYC
     from app.models.transaction import Transaction
+
+
+def _new_wallet_id() -> str:
+    return f"WLT{secrets.token_hex(8).upper()}"
 
 
 class UserRole(str, Enum):
@@ -62,6 +68,7 @@ class User(ULIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     api_key_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
 
     # Financial
+    wallet_id: Mapped[str] = mapped_column(String(32), unique=True, index=True, default=_new_wallet_id, nullable=False)
     balance: Mapped[float] = mapped_column(default=0.0, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="NGN", nullable=False)
 

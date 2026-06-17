@@ -153,4 +153,9 @@ class UserService:
 
     async def get_balance(self, user_id: str) -> dict:
         user = await self.get_user(user_id)
-        return {"user_id": user.id, "balance": user.balance, "currency": user.currency}
+        return {
+            "user_id": user.id,
+            "wallet_id": user.wallet_id,
+            "balance": user.balance,
+            "currency": user.currency,
+        }

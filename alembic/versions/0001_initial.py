@@ -28,6 +28,7 @@ def upgrade() -> None:
         sa.Column("role", sa.String(20), nullable=False, server_default="customer"),
         sa.Column("status", sa.String(30), nullable=False, server_default="pending_verification"),
         sa.Column("api_key_hash", sa.String(255), nullable=True),
+        sa.Column("wallet_id", sa.String(32), nullable=False),
         sa.Column("balance", sa.Numeric(18, 4), nullable=False, server_default="0"),
         sa.Column("currency", sa.String(3), nullable=False, server_default="NGN"),
         sa.Column("last_idempotency_key", sa.String(64), nullable=True),
@@ -38,6 +39,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_users_phone_number", "users", ["phone_number"], unique=True)
     op.create_index("ix_users_email", "users", ["email"], unique=True)
+    op.create_index("ix_users_wallet_id", "users", ["wallet_id"], unique=True)
     op.create_index("ix_users_is_deleted", "users", ["is_deleted"])
     op.create_index("ix_users_api_key_hash", "users", ["api_key_hash"])
 

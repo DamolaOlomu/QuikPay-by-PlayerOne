@@ -3,8 +3,8 @@ app/core/config.py
 Centralised, validated settings loaded from environment / .env file.
 """
 from functools import lru_cache
-from typing import List, Literal
-from pydantic import field_validator, AnyHttpUrl
+from typing import Literal
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # ── API ────────────────────────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     # ── Database ───────────────────────────────────────────────────────────
     DATABASE_URL: str = "sqlite+aiosqlite:///./playeronepay_dev.db"
@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     PAYMENT_PROCESSOR_API_KEY: str = ""
     PAYMENT_PROCESSOR_BASE_URL: str = "https://api.paymentprocessor.example.com"
 
+    # Glyde payment processor
+    GLYDE_ENABLED: bool = False
+    GLYDE_SECRET_KEY: str = ""
+    GLYDE_ENV: Literal["sandbox", "live"] = "sandbox"
+    GLYDE_BASE_URL: str = "https://sandbox.useglyde.co/v1"
+    GLYDE_WEBHOOK_SIGNING_KEY: str = ""
+
     @field_validator("DATABASE_URL")
     @classmethod
     def validate_db_url(cls, v: str) -> str:
@@ -74,6 +81,10 @@ class Settings(BaseSettings):
     @property
     def is_testing(self) -> bool:
         return self.APP_ENV == "development" and "test" in self.DATABASE_URL
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
 
 @lru_cache

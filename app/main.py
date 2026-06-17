@@ -5,7 +5,7 @@ Application factory — the single entry point for the FastAPI app.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -20,6 +20,20 @@ from app.middleware.request_id import RequestIDMiddleware
 
 settings = get_settings()
 log = get_logger(__name__)
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    try:
+        JSONResponse(content=value)
+        return value
+    except TypeError:
+        return str(value)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -70,7 +84,7 @@ def create_app() -> FastAPI:
     # ── Middleware (order matters — outermost registered = outermost executed) ─
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_origins=settings.allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -107,7 +121,7 @@ def create_app() -> FastAPI:
                 "success": False,
                 "error_code": "validation_error",
                 "message": "Request validation failed.",
-                "detail": exc.errors(),
+                "detail": _json_safe(exc.errors()),
                 "request_id": request.headers.get("X-Request-ID"),
             },
         )

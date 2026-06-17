@@ -56,6 +56,7 @@ class UserPINUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
+    wallet_id: str
     phone_number: str
     fullname: str
     email: Optional[str]
@@ -72,6 +73,7 @@ class UserResponse(BaseModel):
 class UserPublic(BaseModel):
     """Minimal public view — safe to return to counterparties."""
     id: str
+    wallet_id: str
     fullname: str
     phone_number: str
 

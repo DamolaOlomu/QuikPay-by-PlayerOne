@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Annotated, Optional
 
-from fastapi import Depends, Header, HTTPException, Query, status
+from fastapi import Depends, Header, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy import select
@@ -30,11 +30,7 @@ async def get_current_user(
     Raises HTTP 401 if token missing, invalid, or user suspended/deleted.
     """
     if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise AuthenticationError("Authentication required.")
     try:
         payload = decode_token(credentials.credentials)
         user_id: str = payload.get("sub")
@@ -42,11 +38,7 @@ async def get_current_user(
         if not user_id or token_type != "access":
             raise InvalidTokenError()
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise InvalidTokenError("Invalid or expired token.")
 
     result = await db.execute(
         select(User).where(User.id == user_id, User.is_deleted == False)
@@ -54,11 +46,11 @@ async def get_current_user(
     user = result.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
+        raise AuthenticationError("User not found.")
     if user.status == UserStatus.SUSPENDED:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is suspended.")
+        raise AuthenticationError("Account is suspended.")
     if user.status == UserStatus.CLOSED:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is closed.")
+        raise AuthenticationError("Account is closed.")
 
     return user
 
@@ -66,7 +58,7 @@ async def get_current_user(
 async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     from app.models.user import UserRole
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+        raise AuthenticationError("Admin access required.")
     return current_user
 
 

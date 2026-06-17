@@ -28,6 +28,28 @@ def _build_url(slug: str) -> str:
     return f"{base}/pay/{slug}"
 
 
+def _payment_link_response(link: PaymentLink) -> PaymentLinkResponse:
+    return PaymentLinkResponse.model_validate({
+        "id": link.id,
+        "slug": link.slug,
+        "url": _build_url(link.slug),
+        "title": link.title,
+        "description": link.description,
+        "amount": link.amount,
+        "currency": link.currency,
+        "status": link.status,
+        "collect_phone": link.collect_phone,
+        "collect_name": link.collect_name,
+        "one_time_use": link.one_time_use,
+        "times_paid": link.times_paid,
+        "total_collected": link.total_collected,
+        "expires_at": link.expires_at,
+        "creator_id": link.creator_id,
+        "created_at": link.created_at,
+        "updated_at": link.updated_at,
+    })
+
+
 @router.post(
     "",
     response_model=APIResponse[PaymentLinkResponse],
@@ -48,9 +70,7 @@ async def create_payment_link(
     db.add(link)
     await db.flush()
 
-    resp = PaymentLinkResponse.model_validate(link)
-    resp = resp.model_copy(update={"url": _build_url(slug)})
-    return APIResponse(data=resp, message="Payment link created.")
+    return APIResponse(data=_payment_link_response(link), message="Payment link created.")
 
 
 @router.get(
@@ -67,9 +87,7 @@ async def get_payment_link(
     if not link:
         raise ResourceNotFoundError("Payment link not found.")
 
-    resp = PaymentLinkResponse.model_validate(link)
-    resp = resp.model_copy(update={"url": _build_url(link.slug)})
-    return APIResponse(data=resp)
+    return APIResponse(data=_payment_link_response(link))
 
 
 @router.patch(
@@ -97,9 +115,7 @@ async def update_payment_link(
         link.status = PaymentLinkStatus.EXPIRED
 
     await db.flush()
-    resp = PaymentLinkResponse.model_validate(link)
-    resp = resp.model_copy(update={"url": _build_url(link.slug)})
-    return APIResponse(data=resp, message="Payment link updated.")
+    return APIResponse(data=_payment_link_response(link), message="Payment link updated.")
 
 
 @router.delete(
